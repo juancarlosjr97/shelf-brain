@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ShelfBrain MVP API built with Rust Lambda, API Gateway, and DynamoDB.
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: provided.al2023
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref ShelfBrainTable
+        RUST_LOG: info
+
+Resources:
+  ShelfBrainTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  ShelfBrainApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowHeaders:
+          - content-type
+          - x-user-id
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowOrigins:
+          - '*'
+
+  ShelfBrainFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: rust-cargolambda
+    Properties:
+      CodeUri: .
+      Handler: bootstrap
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ShelfBrainTable
+      Events:
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ShelfBrainApi
+            Path: /{proxy+}
+            Method: ANY
+        RootApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ShelfBrainApi
+            Path: /
+            Method: ANY
+
+Outputs:
+  ApiUrl:
+    Description: ShelfBrain API base URL
+    Value: !Sub 'https://${ShelfBrainApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref ShelfBrainTable

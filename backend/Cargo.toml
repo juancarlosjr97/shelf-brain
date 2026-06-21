@@ -1,0 +1,21 @@
+[package]
+name = "shelfbrain-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-dynamodb = "1"
+chrono = { version = "0.4", features = ["serde"] }
+lambda_http = "0.17"
+lambda_runtime = "0.14"
+serde = { version = "1", features = ["derive"] }
+serde_dynamo = { version = "4", features = ["aws-sdk-dynamodb+1"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+http = "1"
